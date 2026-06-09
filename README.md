@@ -1,35 +1,21 @@
-# UCAS 2026 COD Lab
+# UCAS 2026 计算机组成原理实验
 
-This repository contains lab code for the UCAS 2026 Computer Organization and Design course.
+这个仓库用于保存 UCAS 2026 计算机组成原理实验代码。
 
-## Contents
+## 目录说明
 
-- `prj0/`: 8-bit adder implementation.
-- `prj1/`: register file and ALU modules.
-- `prj2/`: simple CPU and shifter implementation.
-- `prj3/`: custom CPU hardware and supporting software utilities.
+- `prj0/`：8 位加法器实验。
+- `prj1/`：寄存器堆与 ALU 实验。
+- `prj2/`：简单 CPU 与移位器实验。
+- `prj3/`：多周期自定义 CPU 及相关软件辅助代码。
+- `prj4/`：流水线 CPU 相关代码。
 
-## Project Structure
+## prj4 说明
 
-```text
-.
-├── prj0/
-│   └── adder.v
-├── prj1/
-│   ├── alu.v
-│   └── reg_file.v
-├── prj2/
-│   ├── shifter.v
-│   └── simple_cpu.v
-└── prj3/
-    ├── hardware/
-    │   └── custom_cpu.v
-    └── software/
-        ├── perf_cnt.h
-        ├── pert_cnt.c
-        └── print.c
-```
+`prj4/turbo_cpu.v` 是当前的流水线 CPU 实现。代码将处理器拆分为 IF、ID、EX、MEM、WB 五个阶段，并在级间使用状态机保存阶段状态，优先保证访存、跳转和数据相关情况下的执行正确性。
 
-## Notes
+`prj4/conv.c` 是卷积相关测试/辅助程序代码，用于配合后续实验或加速器相关测试。
 
-The Verilog files implement the hardware modules required by each lab project. The software files in `prj3/software` provide lightweight printing and performance counter helpers for the custom CPU project.
+## 备注
+
+仓库中的 Verilog 文件主要用于硬件模块实现；C 文件主要用于测试程序、性能计数或实验辅助逻辑。实验过程中可能会根据测试框架和板上行为继续调整实现。

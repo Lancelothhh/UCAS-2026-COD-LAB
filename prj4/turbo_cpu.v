@@ -139,7 +139,7 @@ module custom_cpu(
 
     assign if_to_id_valid  = if_valid;
     assign id_to_ex_valid  = id_valid && id_readygo;
-    assign ex_to_mem_valid = ex_valid;
+    assign ex_to_mem_valid = ex_valid && ex_readygo;
     assign mem_to_wb_valid = mem_valid && mem_readygo;
 
     assign if_allowin  = 1'b0;
@@ -148,8 +148,10 @@ module custom_cpu(
     assign mem_allowin = (mem_state == MEM_EMPTY);
     assign wb_allowin  = (wb_state  == ST_EMPTY);
 
+    assign if_readygo = 1'b1;
     assign ex_readygo = (ex_state == ST_DONE);
     assign wb_readygo = (wb_state == ST_DONE);
+    assign mem_readygo =(mem_state == MEM_DONE);
 
 // pipeline register
     reg [31:0] if_pc;
@@ -186,7 +188,6 @@ module custom_cpu(
     reg [31:0] mem_alu_result;
     reg [31:0] mem_result;
     reg [31:0] mem_store_data;
-    reg [31:0] mem_read_data;
     reg [5:0]  mem_opcode;
     reg        mem_memread;
     reg        mem_memwrite;
@@ -236,7 +237,7 @@ module custom_cpu(
 
     assign Inst_Req_Valid = !rst && (if_state == IF_REQ) && !ex_redirect;
     assign Inst_Ready     = rst || (if_state == IF_WAIT) || ex_redirect;
-    assign if_readygo = 1'b1;
+    
 
     always @(posedge clk) begin
         if (rst) begin
@@ -645,7 +646,6 @@ module custom_cpu(
             mem_alu_result <= 32'b0;
             mem_result <= 32'b0;
             mem_store_data <= 32'b0;
-            mem_read_data <= 32'b0;
             mem_opcode <= 6'b0;
             mem_memread <= 1'b0;
             mem_memwrite <= 1'b0;
@@ -662,7 +662,6 @@ module custom_cpu(
                         mem_alu_result <= ex_alu_result;
                         mem_result     <= ex_result;
                         mem_store_data <= ex_forward_rdata2;
-                        mem_read_data  <= 32'b0;
                         mem_opcode     <= ex_opcode;
                         mem_memread    <= ex_memread;
                         mem_memwrite   <= ex_memwrite;
@@ -680,7 +679,6 @@ module custom_cpu(
 
                 MEM_WAIT: begin
                     if (Read_data_Valid) begin
-                        mem_read_data <= Read_data;
                         mem_result    <= mem_result_from_bus;
                         mem_state     <= MEM_DONE;
                     end
@@ -716,8 +714,6 @@ module custom_cpu(
 
     assign Read_data_Ready = rst || (mem_state == MEM_WAIT);
 
-    assign mem_readygo =
-        (mem_state == MEM_DONE);
 
 // load data control
     wire [7:0] mem_byte_read_from_bus =
@@ -749,37 +745,6 @@ module custom_cpu(
         (mem_opcode == 6'b100011) ? Read_data :
         (mem_opcode == 6'b100010) ? mem_lwl_read_from_bus :
         (mem_opcode == 6'b100110) ? mem_lwr_read_from_bus :
-                                    32'b0;
-
-    wire [7:0] mem_byte_read =
-        (mem_addr_low == 2'b00) ? mem_read_data[7:0]   :
-        (mem_addr_low == 2'b01) ? mem_read_data[15:8]  :
-        (mem_addr_low == 2'b10) ? mem_read_data[23:16] :
-                                  mem_read_data[31:24];
-
-    wire [15:0] mem_half_read =
-        mem_addr_low[1] ? mem_read_data[31:16] : mem_read_data[15:0];
-
-    wire [31:0] mem_lwl_read =
-        (mem_addr_low == 2'b00) ? {mem_read_data[7:0],   mem_store_data[23:0]} :
-        (mem_addr_low == 2'b01) ? {mem_read_data[15:0],  mem_store_data[15:0]} :
-        (mem_addr_low == 2'b10) ? {mem_read_data[23:0],  mem_store_data[7:0]}  :
-                                  mem_read_data;
-
-    wire [31:0] mem_lwr_read =
-        (mem_addr_low == 2'b00) ? mem_read_data :
-        (mem_addr_low == 2'b01) ? {mem_store_data[31:24], mem_read_data[31:8]}  :
-        (mem_addr_low == 2'b10) ? {mem_store_data[31:16], mem_read_data[31:16]} :
-                                  {mem_store_data[31:8],  mem_read_data[31:24]};
-
-    wire [31:0] mem_load_result =
-        (mem_opcode == 6'b100000) ? {{24{mem_byte_read[7]}}, mem_byte_read} : // lb指令
-        (mem_opcode == 6'b100100) ? {24'b0, mem_byte_read} :                 // lbu指令
-        (mem_opcode == 6'b100001) ? {{16{mem_half_read[15]}}, mem_half_read} : // lh指令
-        (mem_opcode == 6'b100101) ? {16'b0, mem_half_read} :                 // lhu指令
-        (mem_opcode == 6'b100011) ? mem_read_data :                          // lw指令
-        (mem_opcode == 6'b100010) ? mem_lwl_read :                           // lwl指令
-        (mem_opcode == 6'b100110) ? mem_lwr_read :                           // lwr指令
                                     32'b0;
 
 // store data control
@@ -917,5 +882,4 @@ module custom_cpu(
     assign cpu_perf_cnt_15 = 32'b0;
 
 endmodule
-
 
