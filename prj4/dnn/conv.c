@@ -2,6 +2,7 @@
 #include "trap.h"
 #include "mul.h"
 #include "div.h"
+#include "perf_cnt.h"
 
 #define FRAC_BIT 10
 
@@ -285,6 +286,11 @@ int comparing()
 
 int main()
 {
+	Result res;
+	res.msec = 0;
+	res.inst_cnt = 0;
+
+	bench_prepare(&res);
 
 #ifdef USE_HW_ACCEL
 	printf("Launching task...\n");
@@ -295,6 +301,10 @@ int main()
 	printf("starting pooling\n");
 	pooling();
 #endif
+
+	bench_done(&res);
+	printf("total cycle %d\n", res.msec);
+	printf("total inst %d\n", res.inst_cnt);
 
 	int result = comparing();
 	printf("benchmark finished\n");
